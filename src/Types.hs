@@ -1,11 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Types where
 import Data.Matrix
 import GHC.Generics
 import Data.Aeson
+import Data.Aeson.TH
 import qualified Data.Vector as V
 import Data.Functor
 
@@ -26,11 +28,7 @@ data Game = Game {
   moves :: Int
 } deriving (Generic, Show)
 
-instance (ToJSON a) => ToJSON (Matrix a) where
-   toJSON = Array . V.fromList . map toJSON . toList
-
-instance (FromJSON a) => FromJSON (Matrix a) where
-  parseJSON  (Array v) = (fromList 9 9 . map parseJSON . V.toList) <$> v
+$(deriveJSON defaultOptions ''Matrix)  --Thank god for template haskell
 
 instance ToJSON Move
 instance FromJSON Move
