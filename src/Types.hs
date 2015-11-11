@@ -26,6 +26,8 @@ data Game = Game {
   moves :: Int
 } deriving (Generic, Show)
 
+
+
 $(deriveJSON defaultOptions ''Matrix)  --Thank god for template haskell
 
 instance ToJSON Move
