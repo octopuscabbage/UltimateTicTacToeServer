@@ -4,15 +4,16 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-module Game where
+module Game.Game where
 
 import Servant.API
 import Servant.Server.Internal.ServantErr
-import Types
+import Game.Types
 import qualified Data.HashMap as H
 import Control.Applicative
 import Control.Concurrent.STM.TVar
 import Control.Monad.IO.Class
+import Lib
 import Control.Monad.Trans.Except
 
 type GameEndpoints =      Capture "playerX" String :> Capture "playerO" String :> Get '[JSON] Game
@@ -20,7 +21,7 @@ type GameEndpoints =      Capture "playerX" String :> Capture "playerO" String :
                      :<|> Capture "playerX" String :> Capture "playerO" String :> Capture "command" String :> Get '[JSON] ()
 
 
-gameServer dbConnection keyValueStoreRef = createGame keyValueStoreRef :<|> doMove keyValueStoreRef :<|> command keyValueStoreRef
+gameServer keyValueStoreRef = createGame keyValueStoreRef :<|> doMove keyValueStoreRef :<|> command keyValueStoreRef
 
 
 doMove store playerX playerO inner outer = getFromStore store playerX playerO >>= authMove >>= updateBoard >>= checkForWin 
@@ -28,10 +29,9 @@ doMove store playerX playerO inner outer = getFromStore store playerX playerO >>
 getFromStore:: TVar (H.Map String Game) -> String -> String -> ExceptT ServantErr IO Game
 getFromStore storeRef playerX playerO = do
   store <- liftIO $ readTVarIO storeRef
-  let findVar = (H.lookup (playerX ++ playerO) store) <|> (H.lookup (playerO ++ playerX) store)
-  case findVar of
-   Nothing -> throwE $ err404 {errBody = "couldn't find game"}
-   (Just a) -> pure a
+  let findVar = H.lookup (playerX ++ playerO) store <|> H.lookup (playerO ++ playerX) store
+  maybeToError custErr404 findVar
+  where custErr404 = err404 {errBody = "couldn't find game"}
 
 authMove:: Game -> ExceptT ServantErr IO Game
 authMove gameState = undefined

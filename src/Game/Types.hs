@@ -1,12 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Types where
+module Game.Types where
 import Data.Matrix
 import GHC.Generics
 import Data.Aeson
 import Data.Aeson.TH
-import qualified Data.Vector as V
 import Data.Functor
 
 data Move = Move {
