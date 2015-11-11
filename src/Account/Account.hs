@@ -21,7 +21,7 @@ type AccountEndpoints = "create" :> Capture "name" String :> Get '[JSON] (Key Ac
                         :<|> "getAll" :> Get '[JSON] [Account]
                         :<|> "display" :> Capture "name" String :> Get '[JSON] [Account]
 
-accountServer =  newAccountEndpoint :<|>  getAllEndpoint
+accountServer =  newAccountEndpoint :<|>  getAllEndpoint :<|> displayEndpoint
 
 newAccountEndpoint:: String -> ExceptT ServantErr IO (Key Account)
 newAccountEndpoint name = liftIO $ newAccount $ blankAccount name
