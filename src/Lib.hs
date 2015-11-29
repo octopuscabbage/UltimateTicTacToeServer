@@ -26,3 +26,7 @@ giveWinner m
 		leftDiag = [(Data.Matrix.getDiag m)]
 		rightDiag = [V.fromList [(Data.Matrix.getElem 3 1 m), (Data.Matrix.getElem 2 2 m), (Data.Matrix.getElem 1 3 m)]]
 		items = rows ++ columns ++ leftDiag ++ rightDiag
+
+--Given a game board, return a meta board showing state of all sub-boards
+checkSubBoards :: Matrix (Matrix Square) -> Matrix Square
+checkSubBoards m = fmap giveWinner m
