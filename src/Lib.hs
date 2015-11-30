@@ -30,3 +30,20 @@ giveWinner m
 --Given a game board, return a meta board showing state of all sub-boards
 checkSubBoards :: Matrix (Matrix Square) -> Matrix Square
 checkSubBoards m = fmap giveWinner m
+
+updateBoard :: Matrix (Matrix Square) -> Move -> Square -> Matrix (Matrix Square)
+updateBoard m (Move _ outer inner) s = setElem newInner ((div outer 3), (mod outer 3)) m
+	where 
+		innerBoard = getElem (div outer 3) (mod outer 3) m
+		newInner = setElem s ((div inner 3), (mod inner 3)) innerBoard		
+
+updateGame :: Game -> Move -> Game
+updateGame gameBoard@(Game x o l b mB moveCount) move = Game {playerX = x, playerO = o, lastMove = move, board = newBoard, metaBoard = (checkSubBoards newBoard), moves = (moveCount + 1)}
+	where
+		newBoard = updateBoard b move player
+		player = getPlayer gameBoard move
+
+getPlayer :: Game -> Move -> Square
+getPlayer (Game x o _ _ _ _) (Move p _ _)
+	| p == x = X
+	| p == o = O
