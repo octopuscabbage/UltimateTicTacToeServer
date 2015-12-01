@@ -12,30 +12,31 @@ import Game.Types
 import qualified Data.HashMap as H
 import Control.Applicative
 import Control.Concurrent.STM.TVar
+import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Lib
 import Control.Monad.Trans.Except
 import qualified Data.Matrix as MTX
 import Data.Maybe
 
-type GameEndpoints =      Capture "curPlayer" String :> Capture "oppPlayer" String :> Get '[JSON] Game
-                     :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> Capture "outerMove" Integer :> Capture "innerMove" Integer :> Get '[JSON] Game
-                     :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> Capture "command" String :> Get '[JSON] ()
+type GameEndpoints =      Capture "curPlayer" String :> Capture "oppPlayer" String :> "new":> Get '[JSON] Game
+                          :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> "view" :> Get '[JSON] Game
+                          :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> Capture "outerMove" Integer :> Capture "innerMove" Integer :> Get '[JSON] Game
 
+type Store = TVar (H.Map String Game) 
+type ServantFunc a = ExceptT ServantErr IO a
 
-gameServer keyValueStoreRef = createGame keyValueStoreRef :<|> doMove keyValueStoreRef :<|> command keyValueStoreRef
+gameServer keyValueStoreRef = createGame keyValueStoreRef
+                              :<|> getFromStore keyValueStoreRef
+                              :<|> doMove keyValueStoreRef
 
 
 doMove store curPlayer oppPlayer inner outer = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove >>= checkForWin 
     where
         newMove = (Move curPlayer outer inner)
 
-getFromStore:: TVar (H.Map String Game) -> String -> String -> ExceptT ServantErr IO Game
-getFromStore storeRef curPlayer oppPlayer = do
-  store <- liftIO $ readTVarIO storeRef
-  let findVar = H.lookup (curPlayer ++ oppPlayer) store <|> H.lookup (oppPlayer ++ curPlayer) store
-  maybeToError custErr404 findVar
-  where custErr404 = err404 {errBody = "couldn't find game"}
+getFromStore:: Store -> String -> String -> ServantFunc Game
+getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlayer >>= maybeToError err404 {errBody = "Couldn't find game"}
 
 validateMove:: Move -> Game -> ExceptT ServantErr IO Game
 validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _)
@@ -68,7 +69,19 @@ updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves) =
 
 checkForWin = undefined
 
-createGame store playerX playerO = if isNothing (lookup playerX playerO <|> lookup playerO playerX) then insert 
+createGame:: TVar (H.Map String Game) -> String -> String -> ExceptT ServantErr IO Game
+createGame storeRef curPlayer oppPlayer =do
+  store <- getStore storeRef
+  game <- findGame storeRef curPlayer oppPlayer
+  if isNothing game
+    then (liftIO $ atomically $ writeTVar storeRef $ H.insert (curPlayer ++ oppPlayer) nGame store) >> pure nGame
+    else throwE err400
+    where nGame = newGame curPlayer oppPlayer
 
-command store curPlayer playerY = undefined
+findGame:: Store -> String -> String -> ServantFunc (Maybe Game)
+findGame storeRef curPlayer oppPlayer= do
+  store <- getStore storeRef
+  pure (H.lookup (curPlayer ++ oppPlayer) store <|> H.lookup (oppPlayer ++ curPlayer) store)
 
+getStore:: Store -> ServantFunc (H.Map String Game)
+getStore storeRef  = liftIO $ readTVarIO storeRef
