@@ -68,7 +68,8 @@ updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves) =
 
 checkForWin = undefined
 
-createGame store playerX playerO = if isNothing (lookup playerX playerO <|> lookup playerO playerX) then insert 
+-- missing an else block
+createGame store playerX playerO = if isNothing (lookup playerX playerO <|> lookup playerO playerX) then H.insert else Nothing
 
 command store curPlayer playerY = undefined
 

@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Game.Types where
-import Data.Matrix
+import qualified Data.Matrix as MTX
 import GHC.Generics
 import Data.Aeson
 import Data.Aeson.TH
@@ -20,15 +20,30 @@ data Game = Game {
   playerX :: String,
   playerO :: String,
   lastMove :: Move,
-  board :: Matrix (Matrix Square),
-  metaBoard :: Matrix Square,
+  board :: MTX.Matrix (MTX.Matrix Square),
+  metaBoard :: MTX.Matrix Square,
   moves :: Int
 } deriving (Generic, Show)
 
-newState playerX playerO = Game playerX playerO (Move "None" 0 0) fromList 3 3 (map (fromList 3 3 (map (const Empty) [1..9])) [1..9]) fromList 3 3 (map (const Empty) [1..9]) 0
+--newState playerX playerO = Game playerX playerO (Move "None" 0 0) MTX.fromList 3 3 (map (MTX.fromList 3 3 (map (const Empty) [1..9])) [1..9]) MTX.fromList 3 3 (map (const Empty) [1..9]) 0
+
+emptyState pX pO = Game {
+        playerX = pX,
+        playerO = pO,
+        lastMove = (Move "None" 0 0),
+--        board = MTX.fromList 3 3 $ map (
+--            const (MTX.fromList 3 3 (map (const Empty) [1..9]))
+--        ) [1..9],
+--        metaBoard = MTX.fromList 3 3 (map (const Empty) [1..9]),
+		board = MTX.fromList 3 3 $ map (const emptyBoard) [1..9],
+		metaBoard = emptyBoard,
+        moves = 0
+    }
+    where
+    	emptyBoard = MTX.fromList 3 3 (map (const Empty) [1..9])
 
 
-$(deriveJSON defaultOptions ''Matrix)  --Thank god for template haskell
+$(deriveJSON defaultOptions ''MTX.Matrix)  --Thank god for template haskell
 
 instance ToJSON Move
 instance FromJSON Move
