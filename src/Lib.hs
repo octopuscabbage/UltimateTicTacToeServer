@@ -46,6 +46,6 @@ updateBoard m (Move _ outer inner) s = setElem newInner ((div outer 3), (mod out
 --        player = getPlayer gameBoard move
 
 getPlayer :: Game -> Move -> Square
-getPlayer (Game x o _ _ _ _) (Move p _ _)
+getPlayer (Game x o _ _ _ _ _) (Move p _ _)
     | p == x = X
     | p == o = O

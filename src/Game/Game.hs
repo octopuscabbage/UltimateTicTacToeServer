@@ -39,7 +39,9 @@ getFromStore:: Store -> String -> String -> ServantFunc Game
 getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlayer >>= maybeToError err404 {errBody = "Couldn't find game"}
 
 validateMove:: Move -> Game -> ExceptT ServantErr IO Game
-validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _)
+validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _ gameWon)
+    | gameWon == Empty = pure gameState
+    | lastPlayer == "none" = pure gameState
     -- the current player is the last player; move out of turn
     | curPlayer == lastPlayer = throwE err406
     -- the current outer square is not the last inner move; bad move
@@ -55,13 +57,14 @@ validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPla
         targetBoard = MTX.toList board !! (outer - 1)
 
 updateGame :: Move -> Game -> ExceptT ServantErr IO Game
-updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves) = pure Game {
+updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves won) = pure Game {
         playerX = x,
         playerO = o,
         lastMove = move,
         board = newBoard,
         metaBoard = (checkSubBoards newBoard),
-        moves = (moves + 1)
+        moves = (moves + 1),
+        gameWon = won
     }
     where
         newBoard = updateBoard board move nowPlayer
