@@ -9,5 +9,5 @@ module Game where
 import Servant.API
 
 type GameEndpoints =      Capture "playerX" String :> Capture "playerY" String 
-                     :<|> Capture "playerX" String :> Capture "playerY" String :> Capture "outterMove" Integer :> Capture "innterMove" Integer
+                     :<|> Capture "playerX" String :> Capture "playerY" String :> Capture "outerMove" Integer :> Capture "innerMove" Integer
                      :<|> Capture "playerX" String :> Capture "playerY" String :> Capture "command" String
