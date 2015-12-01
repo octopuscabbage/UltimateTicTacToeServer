@@ -25,6 +25,7 @@ data Game = Game {
   moves :: Int
 } deriving (Generic, Show)
 
+newState playerX playerO = Game playerX playerO (Move "None" 0 0) fromList 3 3 (map (fromList 3 3 (map (const Empty) [1..9])) [1..9]) fromList 3 3 (map (const Empty) [1..9]) 0
 
 
 $(deriveJSON defaultOptions ''Matrix)  --Thank god for template haskell

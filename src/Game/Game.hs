@@ -16,6 +16,8 @@ import Control.Monad.IO.Class
 import Lib
 import Control.Monad.Trans.Except
 
+import Data.Maybe
+
 type GameEndpoints =      Capture "playerX" String :> Capture "playerO" String :> Get '[JSON] Game
                      :<|> Capture "playerX" String :> Capture "playerO" String :> Capture "outterMove" Integer :> Capture "innterMove" Integer :> Get '[JSON] Game
                      :<|> Capture "playerX" String :> Capture "playerO" String :> Capture "command" String :> Get '[JSON] ()
@@ -40,7 +42,7 @@ updateBoard = undefined
 
 checkForWin = undefined
 
-createGame store playerX playerO = undefined
+createGame store playerX playerO = if isNothing (lookup playerX playerO <|> lookup playerO playerX) then insert 
 
 command store playerX playerY = undefined
 
