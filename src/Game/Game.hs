@@ -61,12 +61,20 @@ validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPla
         targetBoard = MTX.toList board !! (outer - 1)
 
 updateGame :: Move -> Game -> ServantFunc Game
-updateGame move gameBoard@(Game x o l b mB moveCount winner) = pure $ Game {playerX = x, playerO = o, lastMove = move, board = newBoard
-                                                                    , metaBoard = newMeta, moves = (moveCount + 1), gameWon = (giveWinner newMeta)}
+updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves _) = pure Game {
+        playerX = x,
+        playerO = o,
+        lastMove = move,
+        board = newBoard,
+        metaBoard = newMeta,
+        moves = (moves + 1),
+        gameWon = won
+    }
     where
-        newBoard = updateBoard b move player
-        player = getPlayer gameBoard move
+        newBoard = updateBoard board move nowPlayer
+        nowPlayer = getPlayer game move
         newMeta = checkSubBoards newBoard
+        won = giveWinner newMeta
 
 createGame:: TVar (H.Map String Game) -> String -> String -> ServantFunc Game
 createGame storeRef curPlayer oppPlayer =do
