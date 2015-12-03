@@ -57,18 +57,20 @@ validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPla
         targetBoard = MTX.toList board !! (outer - 1)
 
 updateGame :: Move -> Game -> ExceptT ServantErr IO Game
-updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves won) = pure Game {
+updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves _) = pure Game {
         playerX = x,
         playerO = o,
         lastMove = move,
         board = newBoard,
-        metaBoard = (checkSubBoards newBoard),
+        metaBoard = newMeta,
         moves = (moves + 1),
         gameWon = won
     }
     where
         newBoard = updateBoard board move nowPlayer
         nowPlayer = getPlayer game move
+        newMeta = checkSubBoards newBoard
+        won = giveWinner newMeta
 
 checkForWin = undefined
 
