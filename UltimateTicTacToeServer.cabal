@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Server,
                        Lib,
+                       Game.Game,
                        Game.Types
   build-depends:       base >= 4.7 && < 5,
                        servant == 0.4.4.*,
@@ -30,14 +31,13 @@ library
                        persistent == 2.2.*,
                        persistent-sqlite == 2.2.*,
                        persistent-template == 2.1.*,
+                       either == 4.4.*,
                        wai == 3.0.3.*,
                        warp == 3.1.*,
                        servant-jquery == 0.4.4.*,
-                       either == 4.4.*,
                        servant-docs==0.4.4.*
   default-language:    Haskell2010
-  other-modules:       Game.Game
-                     , Account.Account
+  other-modules:       Account.Account
                      , Account.Types
 
 executable UltimateTicTacToeServer-exe

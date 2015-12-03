@@ -44,18 +44,18 @@ getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlaye
 
 validateMove:: Move -> Game -> ServantFunc Game
 validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _ gameWon)
-    | gameWon == Empty = pure gameState
-    | lastPlayer == "none" = pure gameState
+    | lastPlayer == "None" = pure gameState
+    | gameWon /= Empty = left err410 { errBody = "Game finished." }
     -- the current player is the last player; move out of turn
-    | curPlayer == lastPlayer = left err406
+    | curPlayer == lastPlayer = left err412 { errBody = "Opponent's move" }
     -- the current outer square is not the last inner move; bad move
-    | outer /= lastInner = left err406
+    | outer /= lastInner = left err412 { errBody = "Invalid outer sqaure" }
     -- the looks at theouter move (where the player wants to go)
     --    and checks to see if the any of the cells are empty. it
     --    there are no empty cells, return an error.
-    | (any (== Empty) $ MTX.toList targetBoard) == False = left err406
+    | (any (== Empty) $ MTX.toList targetBoard) == False = left err412 { errBody = "Square Full" }
     -- look at the target inner board and see if the desired move is occupied
-    | (MTX.toList targetBoard) !! (inner - 1) /= Empty = left err406
+    | (MTX.toList targetBoard) !! (inner - 1) /= Empty = left err412 { errBody = "Inner Move occupied" }
     | otherwise = pure gameState
     where
         targetBoard = MTX.toList board !! (outer - 1)
