@@ -20,17 +20,14 @@ data Game = Game {
   playerX :: String,
   playerO :: String,
   lastMove :: Move,
-  board :: Matrix (Matrix Square),
-  metaBoard :: Matrix Square,
+  board :: [[Square]],
+  metaBoard :: [Square],
   moves :: Int,
   gameWon :: Square
 } deriving (Generic, Show)
 
 newGame:: String -> String -> Game
-newGame playerX playerO = Game playerX playerO (Move "None" 0 0) (fromList 3 3 (map (\_ -> fromList 3 3 (map (const Empty) [1..9])) [1..9])) (fromList 3 3 (map (const Empty) [1..9])) 0 Empty
-
-
-$(deriveJSON defaultOptions ''Matrix)  --Thank god for template haskell
+newGame playerX playerO = Game playerX playerO (Move "None" 0 0) (map (\_ -> (map (const Empty) [1..9])) [1..9]) (map (const Empty) [1..9]) 0 Empty
 
 instance ToJSON Move
 instance FromJSON Move

@@ -10,11 +10,11 @@ maybeToError err Nothing = left err
 maybeToError _  (Just a) = right a
 
 --Use with matrix rows, columns, and diagonal as a list to determine if a player has won
-checkWin :: Square -> [V.Vector Square] -> Bool
-checkWin s xs = any (== True) $ map (\v -> V.all (\x -> x == s || x == Both) v) xs
+checkWin :: Square -> [[Square]] -> Bool
+checkWin s xs = any (== True) $ map (\v -> all (\x -> x == s || x == Both) v) xs
 
 --Given a matrix of squares this will return which square (X, O, Neither, Both) has won
-giveWinner :: Matrix Square -> Square
+giveWinner :: [Square] -> Square
 giveWinner m
     | both                                       = Both
     | checkWin X items                           = X
@@ -29,16 +29,21 @@ giveWinner m
         both = (checkWin X items) && (checkWin O items)
 
 --Given a game board, return a meta board showing state of all sub-boards
-checkSubBoards :: Matrix (Matrix Square) -> Matrix Square
+checkSubBoards :: [[Square]] -> [Square]
 checkSubBoards m = fmap giveWinner m
 
-updateBoard :: Matrix (Matrix Square) -> Move -> Square -> Matrix (Matrix Square)
-updateBoard m (Move _ outer inner) s = setElem newInner ((div outer 3), (mod outer 3)) m
+updateBoard :: [[Square]] -> Move -> Square -> [[Square]]
+updateBoard m (Move _ outer inner) s = setListElem newInner outer m
     where 
-        innerBoard = getElem (div outer 3) (mod outer 3) m
-        newInner = setElem s ((div inner 3), (mod inner 3)) innerBoard      
+        innerBoard =  m !! outer
+        newInner = setListElem s inner innerBoard      
 
 getPlayer :: Game -> Move -> Square
 getPlayer (Game x o _ _ _ _ _) (Move p _ _)
     | p == x = X
     | p == o = O
+
+setListElem::a -> Int-> [a]->[a]
+setListElem newVal n (x:xs)
+     | n == 0 = newVal:xs
+     | otherwise = x:setListElem (n-1) newVal xs

@@ -19,6 +19,7 @@ import qualified Data.Matrix as MTX
 import Data.Maybe
 import Servant
 import Control.Monad.Trans.Either
+import Account.Account
 
 type GameEndpoints =      Capture "curPlayer" String :> Capture "oppPlayer" String :> "new":> Get '[JSON] Game
                           :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> "view" :> Get '[JSON] Game
@@ -35,9 +36,27 @@ gameServer keyValueStoreRef = createGame keyValueStoreRef
                               :<|> listGames keyValueStoreRef
 
 doMove:: Store -> String -> String -> Int -> Int -> ServantFunc Game
-doMove store curPlayer oppPlayer inner outer = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove
+doMove store curPlayer oppPlayer inner outer = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove >>= updateStoreAndDB curPlayer oppPlayer store
     where
         newMove = (Move curPlayer outer inner)
+
+updateStoreAndDB curPlayer oppPlayer storeRef gameState@(Game _ _ _ _ _ _ Empty) = do --No winner yet
+  store <- getStore storeRef
+  let newStore = if H.member (curPlayer++oppPlayer) store then H.adjust (const gameState) (curPlayer++oppPlayer) store else H.adjust (const gameState) (oppPlayer ++ curPlayer) store 
+  liftIO $ atomically $ writeTVar storeRef newStore
+  pure gameState
+updateStoreAndDB curPlayer oppPlayer storeRef state = do
+  store <- getStore storeRef
+  liftIO $ increaseWon curPlayer
+  liftIO $ increaseLost oppPlayer
+  if H.member (curPlayer ++ oppPlayer) store then do
+    liftIO $ atomically $ writeTVar storeRef $ H.delete (curPlayer ++ oppPlayer) store
+    pure state
+    else do
+    liftIO $ atomically $ writeTVar storeRef $ H.delete(oppPlayer ++ curPlayer) store
+    pure state
+
+  
 
 getFromStore:: Store -> String -> String -> ServantFunc Game
 getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlayer >>= maybeToError err404 {errBody = "Couldn't find game"}
@@ -53,12 +72,12 @@ validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPla
     -- the looks at theouter move (where the player wants to go)
     --    and checks to see if the any of the cells are empty. it
     --    there are no empty cells, return an error.
-    | (any (== Empty) $ MTX.toList targetBoard) == False = left err406
+    | (any (== Empty) $ targetBoard) == False = left err406
     -- look at the target inner board and see if the desired move is occupied
-    | (MTX.toList targetBoard) !! (inner - 1) /= Empty = left err406
+    | (targetBoard) !! (inner - 1) /= Empty = left err406
     | otherwise = pure gameState
     where
-        targetBoard = MTX.toList board !! (outer - 1)
+        targetBoard = board !! (outer - 1)
 
 updateGame :: Move -> Game -> ServantFunc Game
 updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves _) = pure Game {
