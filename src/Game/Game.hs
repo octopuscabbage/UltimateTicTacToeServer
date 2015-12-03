@@ -15,70 +15,66 @@ import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Lib
-import Control.Monad.Trans.Except
 import qualified Data.Matrix as MTX
 import Data.Maybe
+import Servant
+import Control.Monad.Trans.Either
 
 type GameEndpoints =      Capture "curPlayer" String :> Capture "oppPlayer" String :> "new":> Get '[JSON] Game
                           :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> "view" :> Get '[JSON] Game
-                          :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> Capture "outerMove" Integer :> Capture "innerMove" Integer :> Get '[JSON] Game
+                          :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> Capture "outerMove" Int :> Capture "innerMove" Int :> Get '[JSON] Game
+                          :<|> "games" :> Get '[JSON] [String]
 
 type Store = TVar (H.Map String Game) 
-type ServantFunc a = ExceptT ServantErr IO a
+type ServantFunc a = EitherT ServantErr IO a
 
+gameServer::Store -> Server GameEndpoints
 gameServer keyValueStoreRef = createGame keyValueStoreRef
                               :<|> getFromStore keyValueStoreRef
                               :<|> doMove keyValueStoreRef
+                              :<|> listGames keyValueStoreRef
 
-
-doMove store curPlayer oppPlayer inner outer = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove >>= checkForWin 
+doMove:: Store -> String -> String -> Int -> Int -> ServantFunc Game
+doMove store curPlayer oppPlayer inner outer = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove
     where
         newMove = (Move curPlayer outer inner)
 
 getFromStore:: Store -> String -> String -> ServantFunc Game
 getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlayer >>= maybeToError err404 {errBody = "Couldn't find game"}
 
-validateMove:: Move -> Game -> ExceptT ServantErr IO Game
+validateMove:: Move -> Game -> ServantFunc Game
 validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _ gameWon)
     | gameWon == Empty = pure gameState
     | lastPlayer == "none" = pure gameState
     -- the current player is the last player; move out of turn
-    | curPlayer == lastPlayer = throwE err406
+    | curPlayer == lastPlayer = left err406
     -- the current outer square is not the last inner move; bad move
-    | outer /= lastInner = throwE err406
+    | outer /= lastInner = left err406
     -- the looks at theouter move (where the player wants to go)
     --    and checks to see if the any of the cells are empty. it
     --    there are no empty cells, return an error.
-    | (any (== Empty) $ MTX.toList targetBoard) == False = throwE err406
+    | (any (== Empty) $ MTX.toList targetBoard) == False = left err406
     -- look at the target inner board and see if the desired move is occupied
-    | (MTX.toList targetBoard) !! (inner - 1) /= Empty = throwE err406
+    | (MTX.toList targetBoard) !! (inner - 1) /= Empty = left err406
     | otherwise = pure gameState
     where
         targetBoard = MTX.toList board !! (outer - 1)
 
-updateGame :: Move -> Game -> ExceptT ServantErr IO Game
-updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves won) = pure Game {
-        playerX = x,
-        playerO = o,
-        lastMove = move,
-        board = newBoard,
-        metaBoard = (checkSubBoards newBoard),
-        moves = (moves + 1),
-        gameWon = won
-    }
+updateGame :: Move -> Game -> ServantFunc Game
+updateGame move gameBoard@(Game x o l b mB moveCount winner) = pure $ Game {playerX = x, playerO = o, lastMove = move, board = newBoard
+                                                                    , metaBoard = newMeta, moves = (moveCount + 1), gameWon = (giveWinner newMeta)}
     where
-        newBoard = updateBoard board move nowPlayer
-        nowPlayer = getPlayer game move
+        newBoard = updateBoard b move player
+        player = getPlayer gameBoard move
+        newMeta = checkSubBoards newBoard
 
-checkForWin = undefined
-
-createGame:: TVar (H.Map String Game) -> String -> String -> ExceptT ServantErr IO Game
+createGame:: TVar (H.Map String Game) -> String -> String -> ServantFunc Game
 createGame storeRef curPlayer oppPlayer =do
   store <- getStore storeRef
   game <- findGame storeRef curPlayer oppPlayer
   if isNothing game
     then (liftIO $ atomically $ writeTVar storeRef $ H.insert (curPlayer ++ oppPlayer) nGame store) >> pure nGame
-    else throwE err400
+    else left err400
     where nGame = newGame curPlayer oppPlayer
 
 findGame:: Store -> String -> String -> ServantFunc (Maybe Game)
@@ -88,3 +84,6 @@ findGame storeRef curPlayer oppPlayer= do
 
 getStore:: Store -> ServantFunc (H.Map String Game)
 getStore storeRef  = liftIO $ readTVarIO storeRef
+
+listGames::Store -> ServantFunc [String]
+listGames storeRef = H.keys <$> getStore storeRef

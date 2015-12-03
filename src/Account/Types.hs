@@ -7,11 +7,14 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Account.Types where
 import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
+import Data.Aeson
+import GHC.Generics
 
 {--
  IGNORRE THE FOLLOWING TEMPLATE HASKELL BS
@@ -25,6 +28,8 @@ Account
     wins Int
     losses Int
     UniqueName name
-    deriving Show
+    deriving Show Generic
 |]
 
+instance ToJSON Account
+instance FromJSON Account 

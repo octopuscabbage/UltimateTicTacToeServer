@@ -9,32 +9,36 @@ import Database.Persist
 import Database.Persist.Sqlite
 import Database.Persist.TH
 import Servant.API
-import Servant.Server.Internal.ServantErr
+import Servant
 import Control.Monad.Trans.Except
 import Control.Applicative
-
+import Control.Monad.Trans.Either
 import Lib
 
 import Account.Types
 
 type AccountEndpoints = "create" :> Capture "name" String :> Get '[JSON] (Key Account)
                         :<|> "getAll" :> Get '[JSON] [Account]
-                        :<|> "display" :> Capture "name" String :> Get '[JSON] [Account]
+                        :<|> "display" :> Capture "name" String :> Get '[JSON] Account
 
+accountServer:: Server AccountEndpoints
 accountServer =  newAccountEndpoint :<|>  getAllEndpoint :<|> displayEndpoint
 
-newAccountEndpoint:: String -> ExceptT ServantErr IO (Key Account)
+--newAccountEndpoint:: String -> ExceptT ServantErr IO (Key Account)
 newAccountEndpoint name = liftIO $ newAccount $ blankAccount name
 
-getAllEndpoint:: ExceptT ServantErr IO [Account]
+--getAllEndpoint:: ExceptT ServantErr IO [Account]
 getAllEndpoint = liftIO $  getAll
 
-displayEndpoint::String -> ExceptT ServantErr IO Account
+displayEndpoint::String -> EitherT ServantErr IO Account
 displayEndpoint name = do
   accountEntity <- liftIO $ getAccountByName name
-  entity <- flip maybeToError accountEntity err404 {errBody = "Couldn't find that account"}
+  entity <- getValue accountEntity
   let account = entityVal entity
   pure account
+    where custErr404 = err404 {errBody = "Couldn't find that account"}
+          getValue Nothing = left custErr404
+          getValue (Just a) = right $ a
 
 blankAccount name = Account name 0 0
 
