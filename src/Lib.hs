@@ -36,7 +36,7 @@ checkSubBoards m = fmap giveWinner m
 updateBoard :: [[Square]] -> Move -> Square -> [[Square]]
 updateBoard m (Move _ outer inner) s = setListElem outer newInner  m
     where 
-        innerBoard =  m !! outer
+        innerBoard =  m !! (outer - 1)
         newInner = setListElem inner s innerBoard      
 
 getPlayer :: Game -> Move -> Square

@@ -24,7 +24,7 @@ import Account.Account
 type GameEndpoints =      Capture "curPlayer" String :> Capture "oppPlayer" String :> "new":> Get '[JSON] Game
                           :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> "view" :> Get '[JSON] Game
                           :<|> Capture "curPlayer" String :> Capture "oppPlayer" String :> Capture "outerMove" Int :> Capture "innerMove" Int :> Get '[JSON] Game
-                          :<|> "games" :> Get '[JSON] [String]
+                          :<|> "all" :> Get '[JSON] [String]
 
 type Store = TVar (H.Map String Game) 
 type ServantFunc a = EitherT ServantErr IO a
@@ -63,18 +63,17 @@ getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlaye
 
 validateMove:: Move -> Game -> ServantFunc Game
 validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _ gameWon)
-    | gameWon == Empty = pure gameState
     | lastPlayer == "none" = pure gameState
     -- the current player is the last player; move out of turn
-    | curPlayer == lastPlayer = left err406
+    | curPlayer == lastPlayer = left err400 {errBody = "Current player is last player, wait your turn!"}
     -- the current outer square is not the last inner move; bad move
-    | outer /= lastInner = left err406
+    | outer /= lastInner = left err400 {errBody = "Current outer square is not the last inner move"}
     -- the looks at theouter move (where the player wants to go)
     --    and checks to see if the any of the cells are empty. it
     --    there are no empty cells, return an error.
-    | (any (== Empty) $ targetBoard) == False = left err406
+    | (any (== Empty) $ targetBoard) == False = left err400 {errBody = "No empty cells in that square"}
     -- look at the target inner board and see if the desired move is occupied
-    | (targetBoard) !! (inner - 1) /= Empty = left err406
+    | (targetBoard) !! (inner - 1) /= Empty = left err400 {errBody = "Desired square is occupied"}
     | otherwise = pure gameState
     where
         targetBoard = board !! (outer - 1)
