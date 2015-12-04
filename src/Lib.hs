@@ -15,17 +15,18 @@ checkWin s xs = any (== True) $ map (\v -> all (\x -> x == s || x == Both) v) xs
 
 --Given a matrix of squares this will return which square (X, O, Neither, Both) has won
 giveWinner :: [Square] -> Square
-giveWinner m
+giveWinner xs
     | both                                       = Both
     | checkWin X items                           = X
     | checkWin O items                           = O
     | otherwise                                  = Empty
-    where 
+    where
+        m = fromList 3 3 xs	
         rows = map (\x -> Data.Matrix.getRow x m) [1,2,3]
         columns = map (\x -> Data.Matrix.getCol x m) [1,2,3]
         leftDiag = [(Data.Matrix.getDiag m)]
         rightDiag = [V.fromList [(Data.Matrix.getElem 3 1 m), (Data.Matrix.getElem 2 2 m), (Data.Matrix.getElem 1 3 m)]]
-        items = rows ++ columns ++ leftDiag ++ rightDiag
+        items = map V.toList (rows ++ columns ++ leftDiag ++ rightDiag)
         both = (checkWin X items) && (checkWin O items)
 
 --Given a game board, return a meta board showing state of all sub-boards
