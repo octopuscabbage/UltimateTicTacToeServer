@@ -37,7 +37,7 @@ updateBoard :: [[Square]] -> Move -> Square -> [[Square]]
 updateBoard m (Move _ outer inner) s = setListElem outer newInner  m
     where 
         innerBoard =  m !! outer
-        newInner = setListElem inner s innerBoard      
+        newInner = setListElem (inner-1) s innerBoard      
 
 getPlayer :: Game -> Move -> Square
 getPlayer (Game x o _ _ _ _ _) (Move p _ _)
