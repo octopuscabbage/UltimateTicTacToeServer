@@ -34,17 +34,17 @@ checkSubBoards :: [[Square]] -> [Square]
 checkSubBoards m = fmap giveWinner m
 
 updateBoard :: [[Square]] -> Move -> Square -> [[Square]]
-updateBoard m (Move _ outer inner) s = setListElem newInner outer m
+updateBoard m (Move _ outer inner) s = setListElem outer newInner  m
     where 
         innerBoard =  m !! outer
-        newInner = setListElem s inner innerBoard      
+        newInner = setListElem inner s innerBoard      
 
 getPlayer :: Game -> Move -> Square
 getPlayer (Game x o _ _ _ _ _) (Move p _ _)
     | p == x = X
     | p == o = O
 
-setListElem::a -> Int-> [a]->[a]
-setListElem newVal n (x:xs)
+setListElem::Int -> a-> [a]->[a]
+setListElem n newVal (x:xs)
      | n == 0 = newVal:xs
-     | otherwise = x:setListElem (n-1) newVal xs
+     | otherwise = x:setListElem (n - 1) newVal xs
