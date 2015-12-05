@@ -21,9 +21,9 @@ import Control.Concurrent.STM.TVar
 import qualified Data.HashMap as H
 import Servant.Docs
 
-type FullServer = "game" :> GameEndpoints :<|> "account" :> AccountEndpoints 
+type FullServer = "game" :> GameEndpoints :<|> "account" :> AccountEndpoints :<|> Raw
 
-server gameRef = gameServer gameRef :<|> accountServer
+server gameRef = gameServer gameRef :<|> accountServer :<|> serveDirectory "./www/"
 
 serverAPI::Proxy FullServer
 serverAPI = Proxy

@@ -63,7 +63,7 @@ getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlaye
 
 validateMove:: Move -> Game -> ServantFunc Game
 validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _ gameWon)
-    | lastPlayer == "none" = pure gameState
+    | lastPlayer == "None" = pure gameState
     -- the current player is the last player; move out of turn
     | curPlayer == lastPlayer = left err400 {errBody = "Current player is last player, wait your turn!"}
     -- the current outer square is not the last inner move; bad move
@@ -100,7 +100,7 @@ createGame storeRef curPlayer oppPlayer =do
   game <- findGame storeRef curPlayer oppPlayer
   if isNothing game
     then (liftIO $ atomically $ writeTVar storeRef $ H.insert (curPlayer ++ oppPlayer) nGame store) >> pure nGame
-    else left err400
+    else left err400 {errBody = "Game already exists"}
     where nGame = newGame curPlayer oppPlayer
 
 findGame:: Store -> String -> String -> ServantFunc (Maybe Game)

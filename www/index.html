@@ -1,0 +1,15 @@
+<html>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+<script src="http://localhost:8080/main.js"></script>
+<body>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+	Name1: <input type="text" ng-model="name1">
+	Name2: <input type="text" ng-model="name2">
+	<button ng-click="findGame()"> "Click me" </button>
+	{{formatBoard()}}
+</div>
+
+</body>
+</html>
+
