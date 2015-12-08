@@ -24,7 +24,7 @@ data Game = Game {
   metaBoard :: [Square],
   moves :: Int,
   gameWon :: Square
-} deriving (Generic, Show)
+} deriving (Generic, Show, Eq)
 
 newGame:: String -> String -> Game
 newGame playerX playerO = Game playerX playerO (Move "None" 0 0) (map (\_ -> (map (const Empty) [1..9])) [1..9]) (map (const Empty) [1..9]) 0 Empty

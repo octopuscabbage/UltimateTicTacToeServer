@@ -17,7 +17,8 @@ library
   hs-source-dirs:      src
   exposed-modules:     Server,
                        Lib,
-                       Game.Types
+                       Game.Types,
+                       Game.Game
   build-depends:       base >= 4.7 && < 5,
                        servant == 0.4.4.*,
                        matrix == 0.3.4.*,
@@ -36,8 +37,7 @@ library
                        either == 4.4.*,
                        servant-docs==0.4.4.*
   default-language:    Haskell2010
-  other-modules:       Game.Game
-                     , Account.Account
+  other-modules:       Account.Account
                      , Account.Types
 
 executable UltimateTicTacToeServer-exe
@@ -57,6 +57,8 @@ test-suite UltimateTicTacToeServer-test
                      , matrix == 0.3.4.*
                      , vector == 0.10.*
                      , hspec == 2.1.*
+                     , either == 4.4.*
+                     , servant-server == 0.4.4.*
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 
