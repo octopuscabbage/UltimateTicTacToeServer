@@ -18,6 +18,7 @@ import Servant.JQuery
 import Servant.Server
 import Servant
 import Control.Concurrent.STM.TVar
+import Control.Concurrent.STM
 import qualified Data.HashMap as H
 import Servant.Docs
 
@@ -34,7 +35,7 @@ mainFunc = do
   args <- getArgs
   if args == []
     then do
-      gameRef <- newTVarIO (H.empty)
+      gameRef <- atomically $ newTVar (H.empty)
       run 8080 (app gameRef)
     else useArg (args !! 0)
 

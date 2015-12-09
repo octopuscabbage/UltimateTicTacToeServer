@@ -63,21 +63,24 @@ getFromStore storeRef curPlayer oppPlayer = findGame storeRef curPlayer oppPlaye
 
 validateMove:: Move -> Game -> ServantFunc Game
 validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPlayer lastOuter lastInner) board _ _ gameWon)
-    | gameWon /= Empty = left err410
+    | outsideBounds outer  = left err400 {errBody ="Bad outer move"}
+    | outsideBounds inner = left err400 {errBody = "Bad inner move"}
+    | gameWon /= Empty = left err410 {errBody = "Game already won"}
     | lastPlayer == "None" = pure gameState
     -- the current player is the last player; move out of turn
-    | curPlayer == lastPlayer = left err401
+    | curPlayer == lastPlayer = left err401 {errBody = "Move done out of turn, must wait for other player"}
     -- the current outer square is not the last inner move; bad move
-    | outer /= lastInner = left err403
+    | outer /= lastInner = left err403 {errBody = "Current suqare is not the last inner move, bad move"}
     -- the looks at theouter move (where the player wants to go)
     --    and checks to see if the any of the cells are empty. it
     --    there are no empty cells, return an error.
-    | (any (== Empty) $ targetBoard) == False = left err404
+    | (any (== Empty) $ targetBoard) == False = left err404 {errBody = "No empty cells in that square"}
     -- look at the target inner board and see if the desired move is occupied
-    | (targetBoard) !! (inner - 1) /= Empty = left err409
+    | (targetBoard) !! (inner - 1) /= Empty = left err409 {errBody = "Desired space is occupied"}
     | otherwise = pure gameState
     where
         targetBoard = board !! (outer - 1)
+        outsideBounds x = x > 9 || x < 1
 
 updateGame :: Move -> Game -> ServantFunc Game
 updateGame move@(Move curPlayer _ _) game@(Game x o lastMove board meta moves _) = pure Game {
