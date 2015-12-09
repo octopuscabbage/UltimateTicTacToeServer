@@ -36,7 +36,7 @@ gameServer keyValueStoreRef = createGame keyValueStoreRef
                               :<|> listGames keyValueStoreRef
 
 doMove:: Store -> String -> String -> Int -> Int -> ServantFunc Game
-doMove store curPlayer oppPlayer inner outer = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove >>= updateStoreAndDB curPlayer oppPlayer store
+doMove store curPlayer oppPlayer outer inner = getFromStore store curPlayer oppPlayer >>= validateMove newMove >>= updateGame newMove >>= updateStoreAndDB curPlayer oppPlayer store
     where
         newMove = (Move curPlayer outer inner)
 
@@ -44,6 +44,7 @@ updateStoreAndDB curPlayer oppPlayer storeRef gameState@(Game _ _ _ _ _ _ Empty)
   store <- getStore storeRef
   let newStore = if H.member (curPlayer++oppPlayer) store then H.adjust (const gameState) (curPlayer++oppPlayer) store else H.adjust (const gameState) (oppPlayer ++ curPlayer) store 
   liftIO $ atomically $ writeTVar storeRef newStore
+  liftIO $ print "wrote mutable ref"
   pure gameState
 updateStoreAndDB curPlayer oppPlayer storeRef state = do
   store <- getStore storeRef
@@ -70,7 +71,7 @@ validateMove move@(Move curPlayer outer inner) gameState@(Game _ _ (Move lastPla
     -- the current player is the last player; move out of turn
     | curPlayer == lastPlayer = left err401 {errBody = "Move done out of turn, must wait for other player"}
     -- the current outer square is not the last inner move; bad move
-    | outer /= lastInner = left err403 {errBody = "Current suqare is not the last inner move, bad move"}
+    | outer /= lastInner = left err403 {errBody = "Current outter move is not the last inner move, bad move"}
     -- the looks at theouter move (where the player wants to go)
     --    and checks to see if the any of the cells are empty. it
     --    there are no empty cells, return an error.
